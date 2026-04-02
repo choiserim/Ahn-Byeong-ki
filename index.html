@@ -111,17 +111,14 @@
             #capture-area { transform: scale(0.5); }
             .preview-container { height: 650px; }
         }
-
-        /* Input field styling for editing */
-        [contenteditable="true"]:hover {
-            background-color: rgba(0, 71, 160, 0.05);
-            border-radius: 4px;
-            outline: 2px dashed #0047a0;
-        }
-        [contenteditable="true"]:focus {
-            background-color: white;
-            outline: 2px solid #0047a0;
-            padding: 2px 4px;
+        
+        /* Fixed phone number visibility in capture */
+        .phone-display {
+            display: block;
+            color: #0f172a !important;
+            font-weight: 800;
+            letter-spacing: 0.02em;
+            margin-top: 4px;
         }
     </style>
 </head>
@@ -148,24 +145,24 @@
                 <!-- 1. Headline Section -->
                 <header class="text-center mb-8">
                     <p class="text-[14px] font-bold text-samsung-blue mb-3 tracking-[0.4em] uppercase">Samsung Life Insurance</p>
-                    <h1 class="text-[42px] font-black leading-[1.2] mb-8 tracking-tight text-slate-900" contenteditable="true">
+                    <h1 class="text-[42px] font-black leading-[1.2] mb-8 tracking-tight text-slate-900">
                         좋은 보험은 많습니다.<br>
                         그러나 <span class="text-samsung-blue">당신에게 맞는 보험</span>은<br>
                         단 한 가지입니다.
                     </h1>
                     <div class="text-[19px] text-slate-600 max-w-2xl mx-auto leading-[1.6] font-medium">
-                        <p class="mb-2" contenteditable="true">수천 가지 상품, 수만 명의 설계사.</p>
-                        <p class="mb-2 text-slate-800 font-bold italic" contenteditable="true">그들이 말하는 '좋은 보험'은 철저히 <br><span class="text-samsung-blue underline decoration-2 underline-offset-4">그들에게 좋은 보험</span>일 뿐입니다.</p>
-                        <p class="mb-2" contenteditable="true">남의 옷을 입고 살 순 없지 않습니까?</p>
-                        <p class="font-bold text-slate-900 text-[24px] mt-6 tracking-tighter" contenteditable="true">우리는 당신의 불안이 아닌 미래의 삶을 읽습니다.</p>
+                        <p class="mb-2">수천 가지 상품, 수만 명의 설계사.</p>
+                        <p class="mb-2 text-slate-800 font-bold italic">그들이 말하는 '좋은 보험'은 철저히 <br><span class="text-samsung-blue underline decoration-2 underline-offset-4">그들에게 좋은 보험</span>일 뿐입니다.</p>
+                        <p class="mb-2">남의 옷을 입고 살 순 없지 않습니까?</p>
+                        <p class="font-bold text-slate-900 text-[24px] mt-6 tracking-tighter">우리는 당신의 불안이 아닌 미래의 삶을 읽습니다.</p>
                     </div>
                 </header>
 
                 <!-- 2. Action & Legal Section -->
                 <section class="text-center flex-grow flex flex-col justify-center">
                     <div class="bg-blue-50/60 rounded-[32px] p-8 border border-blue-100 shadow-sm">
-                        <h2 class="text-[23px] font-black mb-3 text-slate-900" contenteditable="true">지금 등록하고 정밀 진단을 받으세요</h2>
-                        <p class="text-[15.5px] text-slate-600 mb-8 max-w-xl mx-auto leading-relaxed" contenteditable="true">
+                        <h2 class="text-[23px] font-black mb-3 text-slate-900">지금 등록하고 정밀 진단을 받으세요</h2>
+                        <p class="text-[15.5px] text-slate-600 mb-8 max-w-xl mx-auto leading-relaxed">
                             아래 QR 코드를 스캔하여 <strong>정보제공동의 및 고객 등록</strong>을 완료해 주십시오.<br>
                             삼성생명의 전문 컨설턴트가 당신의 데이터를 분석하여 최적의 제안을 드립니다.
                         </p>
@@ -186,18 +183,18 @@
                             <!-- Contact Card -->
                             <div class="text-left border-l-4 border-samsung-blue pl-6 py-2">
                                 <p class="text-[14px] font-bold text-samsung-blue uppercase tracking-widest mb-1">Expert Consultant</p>
-                                <p class="text-[18px] font-medium text-slate-500 mb-1" contenteditable="true">삼성생명 삼성센터법인지점</p>
-                                <div class="flex items-baseline gap-2 mb-2">
-                                    <span class="text-[32px] font-black text-slate-900" contenteditable="true">안병기</span>
-                                    <span class="text-[18px] font-bold text-slate-600" contenteditable="true">팀장</span>
+                                <p class="text-[18px] font-medium text-slate-500 mb-1">삼성생명 삼성센터법인지점</p>
+                                <div class="flex items-baseline gap-2 mb-1">
+                                    <span class="text-[32px] font-black text-slate-900">안병기</span>
+                                    <span class="text-[18px] font-bold text-slate-600">팀장</span>
                                 </div>
-                                <div class="bg-slate-900 text-white px-4 py-1.5 rounded-full inline-block">
-                                    <p class="text-[18px] font-bold tracking-wider" contenteditable="true">010-5435-1398</p>
+                                <div class="phone-display">
+                                    <span class="text-[24px]">010-5435-1398</span>
                                 </div>
                             </div>
                         </div>
 
-                        <p class="font-bold text-[20px] text-slate-800 mb-6 italic tracking-tight" contenteditable="true">
+                        <p class="font-bold text-[20px] text-slate-800 mb-6 italic tracking-tight">
                             "고객님의 데이터가 곧 가장 완벽한 보험의 기준입니다."
                         </p>
 
@@ -257,21 +254,23 @@
         async function generateCanvas(area) {
             const originalTransform = area.style.transform;
             area.style.transform = 'none';
-            window.scrollTo(0, 0);
+            
+            await new Promise(resolve => setTimeout(resolve, 150));
 
             const canvas = await html2canvas(area, {
                 scale: 3, 
                 useCORS: true,
+                allowTaint: true,
                 backgroundColor: '#ffffff',
-                width: 794,
-                height: 1123,
-                windowWidth: 794,
-                windowHeight: 1123,
                 logging: false,
-                x: 0,
-                y: 0,
-                scrollX: 0,
-                scrollY: 0
+                onclone: (clonedDoc) => {
+                    // Force text visibility for phone display in export
+                    const phone = clonedDoc.querySelector('.phone-display');
+                    if (phone) {
+                        phone.style.color = '#0f172a';
+                        phone.style.display = 'block';
+                    }
+                }
             });
 
             area.style.transform = originalTransform;
@@ -285,7 +284,7 @@
                 const canvas = await generateCanvas(area);
                 const link = document.createElement('a');
                 link.download = '삼성생명_전단지_안병기팀장.png';
-                link.href = canvas.toDataURL('image/png');
+                link.href = canvas.toDataURL('image/png', 1.0);
                 link.click();
                 showToast("이미지가 성공적으로 저장되었습니다.");
             } catch (err) {
@@ -299,7 +298,7 @@
             const area = document.getElementById('capture-area');
             try {
                 const canvas = await generateCanvas(area);
-                const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                const imgData = canvas.toDataURL('image/jpeg', 1.0);
                 const { jsPDF } = window.jspdf;
                 
                 const pdf = new jsPDF('p', 'mm', 'a4');
