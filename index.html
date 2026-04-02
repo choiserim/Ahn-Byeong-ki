@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>삼성생명 - 맞춤형 전단지 (A4 출력 최적화)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        
+        :root {
+            /* A4 Standard at 96 DPI: 794px x 1123px */
+            --a4-width: 794px;
+            --a4-height: 1123px;
+        }
+
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: #f1f5f9;
+            color: #1e293b;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .text-samsung-blue { color: #0047a0; }
+        .bg-samsung-blue { background-color: #0047a0; }
+        .border-samsung-blue { border-color: #0047a0; }
+
+        /* Container for responsive scaling on screens */
+        .preview-container {
+            padding: 100px 20px 40px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        /* Actual A4 Canvas Area - Fixed Size to ensure PDF consistency */
+        #capture-area {
+            background-color: #ffffff;
+            width: var(--a4-width);
+            height: var(--a4-height);
+            min-width: var(--a4-width);
+            min-height: var(--a4-height);
+            position: relative;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transform-origin: top center;
+        }
+
+        .content-wrapper {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 60px 50px 50px 50px; 
+        }
+
+        .qr-upload-label {
+            cursor: pointer;
+            display: block;
+            position: relative;
+        }
+        .qr-upload-label::after {
+            content: '클릭하여 QR 교체';
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.2s;
+            border-radius: 12px;
+        }
+        .qr-upload-label:hover::after {
+            opacity: 1;
+        }
+
+        .tool-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(8px);
+            z-index: 100;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Responsive Scaling for the editor view */
+        @media (max-width: 840px) {
+            #capture-area { transform: scale(0.8); }
+            .preview-container { height: 950px; }
+        }
+        @media (max-width: 640px) {
+            #capture-area { transform: scale(0.5); }
+            .preview-container { height: 650px; }
+        }
+
+        /* Input field styling for editing */
+        [contenteditable="true"]:hover {
+            background-color: rgba(0, 71, 160, 0.05);
+            border-radius: 4px;
+            outline: 2px dashed #0047a0;
+        }
+        [contenteditable="true"]:focus {
+            background-color: white;
+            outline: 2px solid #0047a0;
+            padding: 2px 4px;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="tool-bar shadow-sm">
+        <div class="flex items-center gap-2">
+            <div class="font-black text-samsung-blue text-xl tracking-tight">SAMSUNG LIFE</div>
+            <span class="hidden sm:inline-block text-[10px] bg-slate-100 px-2 py-1 rounded text-slate-500 font-bold tracking-tight border border-slate-200 uppercase">A4 Optimization</span>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="saveAsImage()" class="flex items-center gap-2 bg-white border border-slate-300 px-4 py-2 rounded-lg text-sm font-bold hover:bg-slate-50 transition-all active:scale-95">
+                이미지 저장
+            </button>
+            <button onclick="saveAsPDF()" class="flex items-center gap-2 bg-samsung-blue text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-800 transition-all shadow-md shadow-blue-200 active:scale-95">
+                PDF 저장
+            </button>
+        </div>
+    </div>
+
+    <div class="preview-container">
+        <div id="capture-area">
+            <div class="content-wrapper">
+                <!-- 1. Headline Section -->
+                <header class="text-center mb-8">
+                    <p class="text-[14px] font-bold text-samsung-blue mb-3 tracking-[0.4em] uppercase">Samsung Life Insurance</p>
+                    <h1 class="text-[42px] font-black leading-[1.2] mb-8 tracking-tight text-slate-900" contenteditable="true">
+                        좋은 보험은 많습니다.<br>
+                        그러나 <span class="text-samsung-blue">당신에게 맞는 보험</span>은<br>
+                        단 한 가지입니다.
+                    </h1>
+                    <div class="text-[19px] text-slate-600 max-w-2xl mx-auto leading-[1.6] font-medium">
+                        <p class="mb-2" contenteditable="true">수천 가지 상품, 수만 명의 설계사.</p>
+                        <p class="mb-2 text-slate-800 font-bold italic" contenteditable="true">그들이 말하는 '좋은 보험'은 철저히 <br><span class="text-samsung-blue underline decoration-2 underline-offset-4">그들에게 좋은 보험</span>일 뿐입니다.</p>
+                        <p class="mb-2" contenteditable="true">남의 옷을 입고 살 순 없지 않습니까?</p>
+                        <p class="font-bold text-slate-900 text-[24px] mt-6 tracking-tighter" contenteditable="true">우리는 당신의 불안이 아닌 미래의 삶을 읽습니다.</p>
+                    </div>
+                </header>
+
+                <!-- 2. Action & Legal Section -->
+                <section class="text-center flex-grow flex flex-col justify-center">
+                    <div class="bg-blue-50/60 rounded-[32px] p-8 border border-blue-100 shadow-sm">
+                        <h2 class="text-[23px] font-black mb-3 text-slate-900" contenteditable="true">지금 등록하고 정밀 진단을 받으세요</h2>
+                        <p class="text-[15.5px] text-slate-600 mb-8 max-w-xl mx-auto leading-relaxed" contenteditable="true">
+                            아래 QR 코드를 스캔하여 <strong>정보제공동의 및 고객 등록</strong>을 완료해 주십시오.<br>
+                            삼성생명의 전문 컨설턴트가 당신의 데이터를 분석하여 최적의 제안을 드립니다.
+                        </p>
+
+                        <!-- QR Area + Contact Info (Horizontal Layout) -->
+                        <div class="flex justify-center items-center gap-8 mb-8">
+                            <!-- QR Card -->
+                            <div class="bg-white p-5 border-2 border-samsung-blue rounded-[24px] shadow-md">
+                                <label class="qr-upload-label">
+                                    <input type="file" accept="image/*" class="hidden" onchange="previewQR(this)">
+                                    <img id="qr-display" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://www.samsunglife.com" alt="QR" class="w-28 h-28 object-contain mx-auto">
+                                </label>
+                                <p class="mt-3 text-[9px] text-samsung-blue font-black tracking-[0.2em] uppercase leading-none text-center">
+                                    SCAN FOR CONSULTATION
+                                </p>
+                            </div>
+                            
+                            <!-- Contact Card -->
+                            <div class="text-left border-l-4 border-samsung-blue pl-6 py-2">
+                                <p class="text-[14px] font-bold text-samsung-blue uppercase tracking-widest mb-1">Expert Consultant</p>
+                                <p class="text-[18px] font-medium text-slate-500 mb-1" contenteditable="true">삼성생명 삼성센터법인지점</p>
+                                <div class="flex items-baseline gap-2 mb-2">
+                                    <span class="text-[32px] font-black text-slate-900" contenteditable="true">안병기</span>
+                                    <span class="text-[18px] font-bold text-slate-600" contenteditable="true">팀장</span>
+                                </div>
+                                <div class="bg-slate-900 text-white px-4 py-1.5 rounded-full inline-block">
+                                    <p class="text-[18px] font-bold tracking-wider" contenteditable="true">010-5435-1398</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <p class="font-bold text-[20px] text-slate-800 mb-6 italic tracking-tight" contenteditable="true">
+                            "고객님의 데이터가 곧 가장 완벽한 보험의 기준입니다."
+                        </p>
+
+                        <!-- Compliance Section -->
+                        <div class="text-left p-5 bg-white/95 border border-slate-200 text-[11px] text-slate-600 leading-[1.7] rounded-2xl shadow-sm">
+                            <p class="font-black mb-2 text-samsung-blue underline text-[12px] uppercase tracking-tighter">[법적 고지: 개인정보 보호 및 데이터 이용 안내]</p>
+                            <p class="mb-2 font-bold text-slate-700">본 서비스는 삼성생명의 전문적인 리스크 분석 서비스로, 「개인정보 보호법」 및 「신용정보의 이용 및 보호에 관한 법률」에 따라 운영됩니다. 맞춤형 보험 설계를 위해서는 고객님의 명확한 정보 제공 동의 및 본인 인증이 반드시 필요합니다.</p>
+                            <ul class="space-y-1 font-medium">
+                                <li><span class="font-bold text-slate-800">· 수집 및 이용 목적:</span> 라이프사이클 분석, 맞춤형 보험 상품 비교 및 설계 상담</li>
+                                <li><span class="font-bold text-slate-800">· 보유 및 이용기간:</span> 목적 달성 시 또는 고객 요청 시 즉시 파기</li>
+                                <li><span class="font-bold text-slate-800">· 보안:</span> QR 스캔 후 진행되는 동의 절차는 암호화된 보안 서버를 통해 안전하게 보호됩니다.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+                
+                <footer class="mt-8 flex justify-between items-center border-t border-slate-100 pt-4">
+                    <div class="text-[12px] text-slate-400 font-medium">
+                        © 2024 Samsung Life Insurance. All rights reserved.
+                    </div>
+                    <div class="flex items-center gap-2 opacity-40 grayscale contrast-125">
+                         <span class="text-[14px] font-black text-samsung-blue tracking-tighter">SAMSUNG</span>
+                         <span class="text-[12px] font-bold text-slate-600">LIFE</span>
+                    </div>
+                </footer>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-white px-8 py-4 rounded-2xl text-sm font-bold shadow-2xl transition-all duration-500 z-[200] opacity-0 pointer-events-none transform translate-y-4">
+        저장 완료!
+    </div>
+
+    <script>
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.classList.remove('opacity-0', 'translate-y-4');
+            toast.classList.add('opacity-100', 'translate-y-0');
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-4');
+                toast.classList.remove('opacity-100', 'translate-y-0');
+            }, 3000);
+        }
+
+        function previewQR(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('qr-display').src = e.target.result;
+                    showToast("QR 코드가 업데이트되었습니다.");
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        async function generateCanvas(area) {
+            const originalTransform = area.style.transform;
+            area.style.transform = 'none';
+            window.scrollTo(0, 0);
+
+            const canvas = await html2canvas(area, {
+                scale: 3, 
+                useCORS: true,
+                backgroundColor: '#ffffff',
+                width: 794,
+                height: 1123,
+                windowWidth: 794,
+                windowHeight: 1123,
+                logging: false,
+                x: 0,
+                y: 0,
+                scrollX: 0,
+                scrollY: 0
+            });
+
+            area.style.transform = originalTransform;
+            return canvas;
+        }
+
+        async function saveAsImage() {
+            showToast("이미지를 생성 중입니다...");
+            const area = document.getElementById('capture-area');
+            try {
+                const canvas = await generateCanvas(area);
+                const link = document.createElement('a');
+                link.download = '삼성생명_전단지_안병기팀장.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                showToast("이미지가 성공적으로 저장되었습니다.");
+            } catch (err) {
+                console.error(err);
+                alert("이미지 저장 중 오류가 발생했습니다.");
+            }
+        }
+
+        async function saveAsPDF() {
+            showToast("PDF 문서를 생성 중입니다...");
+            const area = document.getElementById('capture-area');
+            try {
+                const canvas = await generateCanvas(area);
+                const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                const { jsPDF } = window.jspdf;
+                
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+                pdf.save('삼성생명_전단지_안병기팀장.pdf');
+                
+                showToast("PDF 문서가 성공적으로 저장되었습니다.");
+            } catch (err) {
+                console.error(err);
+                alert("PDF 저장 중 오류가 발생했습니다.");
+            }
+        }
+    </script>
+</body>
+</html>
